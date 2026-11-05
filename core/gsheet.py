@@ -22,9 +22,14 @@ class GoogleError(Exception):
 
 
 def _secret_info():
-    """Service-account key stored in Streamlit secrets ([gcp_service_account]) when the app is hosted."""
+    """Service-account key stored in Streamlit secrets when the app is hosted. Two ways are accepted:
+       gcp_service_account_json = '''<paste the whole .json file here>'''      (easiest)
+       or a [gcp_service_account] table with the same fields."""
     try:
         import streamlit as st
+        raw = st.secrets.get('gcp_service_account_json')
+        if raw:
+            return json.loads(raw)
         info = st.secrets.get('gcp_service_account')
         return dict(info) if info else None
     except Exception:
