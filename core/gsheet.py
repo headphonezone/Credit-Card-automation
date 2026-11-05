@@ -21,8 +21,18 @@ class GoogleError(Exception):
     pass
 
 
+def _secret_info():
+    """Service-account key stored in Streamlit secrets ([gcp_service_account]) when the app is hosted."""
+    try:
+        import streamlit as st
+        info = st.secrets.get('gcp_service_account')
+        return dict(info) if info else None
+    except Exception:
+        return None
+
+
 def configured():
-    return bool(db.get('google_key')) and os.path.exists(db.get('google_key'))
+    return (bool(db.get('google_key')) and os.path.exists(db.get('google_key'))) or bool(_secret_info())
 
 
 def _gc():
@@ -30,7 +40,10 @@ def _gc():
     if _client is None:
         import gspread
         try:
-            _client = gspread.service_account(filename=db.get('google_key'), scopes=SCOPES)
+            if db.get('google_key') and os.path.exists(db.get('google_key')):
+                _client = gspread.service_account(filename=db.get('google_key'), scopes=SCOPES)
+            else:
+                _client = gspread.service_account_from_dict(_secret_info(), scopes=SCOPES)
         except Exception as e:
             raise GoogleError('Cannot use the Google key file: %r' % e)
     return _client

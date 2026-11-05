@@ -6,7 +6,11 @@ from core import db, process, parsers, tally, export, reminders, gsheet
 from core.heads import HeadBook, alias_key, assign
 
 st.set_page_config(page_title='Credit Card App', page_icon='💳', layout='wide')
-db.conn().close()
+_c = db.conn()
+if _c.execute('SELECT COUNT(*) FROM cards').fetchone()[0] == 0:          # fresh database (e.g. hosted copy): load the card list once
+    import runpy, os
+    runpy.run_path(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'seed_cards.py'))
+_c.close()
 
 # ---------------------------------------------------------------- "I have paid" link from the reminder email
 qp = st.query_params

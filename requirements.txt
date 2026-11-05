@@ -1,0 +1,6 @@
+streamlit>=1.40
+pandas>=2.0
+openpyxl>=3.1
+pdfplumber>=0.11
+cryptography>=42
+gspread>=6.0
