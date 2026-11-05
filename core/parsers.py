@@ -197,14 +197,24 @@ def meta(bank, text, lines):
                 if m:
                     r.update(total_due=_amt(m[1]), min_due=_amt(m[2]), due_date=_date_any(m[3]))
         elif bank == 'HDFC':
+            # minimum due + due date: the line "C7,310.00 06 Sep, 2026"
             m = re.search(r'C([\d,]+\.\d\d) (\d{1,2} [A-Za-z]{3}, \d{4})', head)
             if m:
                 r['min_due'] = _amt(m[1]); r['due_date'] = _date_any(m[2])
-            i, nxt = _after(lines, r'^Past Dues OVER LIMIT')
+            # TOTAL AMOUNT DUE: the amount printed under "RECEIVED (Current Billing Cycle)", e.g. "_ C1,46,037.00".
+            # (The "Current Dues" column further down equals the MINIMUM due, so it must not be used as the total.)
+            i, nxt = _after(lines[:60], r'^RECEIVED \(Current Billing Cycle\)', 3)
+            tot = None
             if nxt:
-                a = re.findall(r'C([\d,]+\.\d\d)', nxt[0])
-                if len(a) >= 2:
-                    r['total_due'] = _amt(a[-2]); r['min_due'] = r['min_due'] or _amt(a[-1])
+                m = re.match(r'^([_\-\s]*)C ?' + AMT + r'\s*$', nxt[0])
+                if m:
+                    tot = 0.0 if '-' in m[1] else _amt(m[2])
+                else:        # fall back to the equation line: previous - payments + purchases + finance charges
+                    m = re.match(r'^C' + AMT + r' C' + AMT + r' \+ C' + AMT + r' \+ C' + AMT, nxt[0]) or (re.match(r'^C' + AMT + r' C' + AMT + r' \+ C' + AMT + r' \+ C' + AMT, nxt[1]) if len(nxt) > 1 else None)
+                    if m:
+                        p, q, rr, ss = (_amt(x) for x in m.groups()[:4]); tot = round(p - q + rr + ss, 2)
+            if tot is not None:
+                r['total_due'] = tot
         elif bank == 'IDFC':
             i, nxt = _after(lines, r'^(Minimum Amount Due Total Amount Due Payment Due Date|Total Amount Due Minimum Amount Due)', 2)
             if nxt:
