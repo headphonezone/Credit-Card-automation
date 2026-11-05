@@ -1,0 +1,30 @@
+# --- never commit: the app's data, keys and passwords ---
+data/
+*.db
+*.key
+secret.key
+gcache_*.bin
+
+# Google service-account key files and any other credentials
+*.json
+!package.json
+.env
+*.env
+*password*
+*credential*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# logs and exports
+*.log
+*.xlsx
+*.xls
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
